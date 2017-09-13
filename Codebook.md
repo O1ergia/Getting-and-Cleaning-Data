@@ -1,4 +1,4 @@
-##ActivityID	1
+## ActivityID	1
 	Activity type
 
 		1. Walking
@@ -8,11 +8,11 @@
 		5. Standing
 		6. Laying
 
-##SubjectID
+## SubjectID
 	An identifier of the subject who carried out the experiment	
                 1..30 .Unique identifiers of volunteers who were carried out with the experiments
 
-##MeasurementsNames
+## MeasurementsNames
 	The only measurements on the mean and standard deviation for each measurement
 
 		tBodyAcc.mean...X
@@ -102,6 +102,6 @@
 		fBodyBodyGyroMag.std..
 		fBodyBodyGyroJerkMag.std..
 	
-##MeasurementsValue
+## MeasurementsValue
 		 Average of each measurements 
 					
