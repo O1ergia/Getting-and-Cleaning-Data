@@ -1,47 +1,48 @@
 library(dplyr)
-library(reshape)
 
-## load the data ## загружаем данные
-train_data <- read.table( "train/X_train.txt")
-
-## Read variables names from features ## —читываем имена переменных
+## Read variables names from features 
+## —читываем имена переменных
 col_names <- read.table( "features.txt")
 
 ## Make syntactically valid names out of character vectors
 ## ƒелаем имена синтаксически правильными
-colnames(train_data) <-  make.names(col_names[[2]], unique = TRUE)
+col_names <- make.names(col_names[[2]], unique = TRUE)
+col_names <- gsub("(\\.){2,5}", "", col_names)
+col_names <- gsub("(\\.)$", "", col_names)
+
+
+## load the data ## загружаем данные
+train_data <- read.table( "train/X_train.txt")
+colnames(train_data) <- col_names
 
 ## Select columns whose names contains the mean and standard deviation
 train_data_filtered <- select( .data = train_data, contains("mean"), contains("std"))
 rm(train_data)
 
 ## add info about activity and subject
-activity <- read.table( "train/Y_train.txt")
-subj <- read.table( "train/subject_train.txt")
-train_data_filtered$ActivityID <- activity[[1]]
-train_data_filtered$SubjectID <- subj[[1]]
-
-## reshape the data into a narrow form
-train_data_molten <- melt(train_data_filtered, id = c("ActivityID", "SubjectID"))
-## group by activity and subject
-train_data_groupped <- group_by(train_data_molten,ActivityID,SubjectID,variable) %>%  summarize( mean(value))
+activity <- read.table( "train/Y_train.txt", header = F ,col.names = c("ActivityID"), colClasses = c("factor"))
+levels(activity$ActivityID) <- c("WALKING","WALKING_UPSTAIRS","WALKING_DOWNSTAIRS","SITTING","STANDING","LAYING")
+subj <- read.table( "train/subject_train.txt", header = F ,col.names = c("SubjectID"))
+train_data_filtered <- cbind(activity, subj, train_data_filtered)
 
 ## repeat for test data set
 test_data <- read.table( "test/X_test.txt")
-colnames(test_data) <-  make.names(col_names[[2]], unique = TRUE)
+colnames(test_data) <- col_names
 
 test_data_filtered <- select( .data = test_data, contains("mean"), contains("std"))
 rm(test_data)
 
-activity <- read.table( "test/Y_test.txt")
-subj <- read.table( "test/subject_test.txt")
+activity <- read.table( "test/Y_test.txt", header = F ,col.names = c("ActivityID"), colClasses = c("factor"))
+levels(activity$ActivityID) <- c("WALKING","WALKING_UPSTAIRS","WALKING_DOWNSTAIRS","SITTING","STANDING","LAYING")
+subj <- read.table( "test/subject_test.txt", header = F ,col.names = c("SubjectID"))
 
-test_data_filtered$ActivityID <- activity[[1]]
-test_data_filtered$SubjectID <- subj[[1]]
+test_data_filtered <- cbind(activity, subj, test_data_filtered)
 
-test_data_molten <- melt(test_data_filtered, id = c("ActivityID", "SubjectID"))
-test_data_groupped <- group_by(test_data_molten,ActivityID,SubjectID,variable) %>%  summarize( mean(value))
+## Combine the two data frames 
+data <- rbind(train_data_filtered, test_data_filtered )
 
-data <- bind_rows(train_data_groupped, test_data_groupped)
-colnames(data) <-  c("ActivityID","SubjectID","MeasurementsNames","MeasurementsValue")
-write.table(data, file = "tiny_data.txt", row.name=FALSE)
+## Group data.frame by ActivityID and SubjectID columns 
+## and call mean function for all non-grouping variables
+tidy_data <- data %>% group_by(ActivityID, SubjectID) %>% summarise_each(funs(mean))
+ 
+write.table(tidy_data, file = "tiny_data.txt", row.name=FALSE)
